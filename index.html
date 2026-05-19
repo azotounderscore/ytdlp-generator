@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>yt-dlp · Command Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ----------------------------------------------
+     RESET & VARIABILI (leggibilità migliorata)
+     ---------------------------------------------- */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-elevated: #f1f5f9;
+    --border: #e2e8f0;
+    --border-focus: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --accent: #dc2626;
+    --accent-light: #fee2e2;
+    --accent-hover: #b91c1c;
+    --accent-secondary: #3b82f6;
+    --accent-tertiary: #10b981;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.03), 0 1px 1px rgba(0,0,0,0.02);
+    --shadow-md: 0 4px 6px -2px rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.03);
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --radius-xs: 6px;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 32px 24px 120px;
+  }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  /* Rimuovo rumore visivo / overlay */
+  body::before, body::after { display: none; }
+
+  /* HEADER più leggero e aerato */
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-group .logo {
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-family: var(--font-sans);
+  }
+
+  .version-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  /* Griglia principale: due colonne fluide */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+    body { padding: 20px 16px 100px; }
+  }
+
+  /* Sezioni → Cards */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px 20px 24px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .section:hover {
+    border-color: var(--border-focus);
+    box-shadow: var(--shadow-md);
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--accent);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Toggle group (Media) */
+  .toggle-group {
+    display: flex;
+    background: var(--surface-elevated);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .toggle-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .toggle-btn.active {
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    font-weight: 600;
+  }
+  .toggle-btn:not(.active):hover { color: var(--text-primary); background: #eef2ff30; }
+
+  /* Form elements */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .field-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  input, select, .check-item {
+    transition: all 0.2s;
+  }
+
+  input, select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    outline: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
+  }
+  select { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>'); background-repeat: no-repeat; background-position: right 12px center; appearance: none; }
+
+  /* Checkbox list style (pulito) */
+  .check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-elevated);
+    border-radius: var(--radius-xs);
+    padding: 8px 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .check-item:hover { background: var(--surface); border-color: var(--border-focus); }
+  .check-item.active {
+    background: var(--accent-light);
+    border-color: var(--accent);
+  }
+  .check-item input { display: none; }
+  .check-box {
+    width: 18px;
+    height: 18px;
+    background: white;
+    border: 1.5px solid var(--border-focus);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .check-item.active .check-box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .check-box::after {
+    content: "✓";
+    font-size: 11px;
+    color: white;
+    font-weight: bold;
+    display: none;
+  }
+  .check-item.active .check-box::after { display: block; }
+  .check-text {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .check-item.active .check-text { color: var(--accent); font-weight: 500; }
+
+  /* Slider audio */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  input[type=range] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--border);
+    border-radius: 4px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .slider-val {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 32px;
+  }
+
+  /* Range group (playlist) */
+  .range-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .range-sep {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  /* Template guide */
+  .template-guide {
+    background: var(--surface-elevated);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    display: none;
+    border: 1px solid var(--border);
+  }
+  .template-guide.visible { display: block; }
+  .guide-title {
+    font-weight: 700;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    margin-bottom: 12px;
+    color: var(--accent-secondary);
+  }
+  .guide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  .guide-item {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .guide-key {
+    font-family: var(--font-mono);
+    background: var(--surface);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent-secondary);
+    cursor: pointer;
+  }
+  .guide-desc {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+  }
+  .guide-toggle {
+    background: none;
+    border: none;
+    font-size: 0.7rem;
+    color: var(--accent-secondary);
+    text-decoration: underline;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+
+  /* Command output (sticky footer) */
+  .output-wrapper {
+    position: sticky;
+    bottom: 24px;
+    z-index: 20;
+    margin-top: 16px;
+  }
+  .output-section {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: 0 12px 28px -8px rgba(0,0,0,0.12), 0 0 0 1px rgba(220,38,38,0.15);
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #fef2f2;
+    border-bottom: 1px solid #fecaca;
+  }
+  .output-title {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .pulse {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1.2); } }
+
+  .btn-group { display: flex; gap: 12px; }
+  .btn {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.7rem;
+    padding: 6px 14px;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .btn-copy {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-copy:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .btn-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .btn-reset:hover { background: var(--surface-elevated); }
+
+  .command-display {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 20px 24px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .cmd-prefix { color: #94a3b8; }
+  .cmd-flag { color: #f97316; font-weight: 500; }
+  .cmd-value { color: #34d399; }
+  .cmd-url { color: #f87171; text-decoration: underline; text-decoration-style: dotted; }
+
+  .explanation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--surface-elevated);
+    border-top: 1px solid var(--border);
+    font-size: 0.7rem;
+  }
+  .exp-tag {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 4px 12px;
+    display: inline-flex;
+    gap: 8px;
+    align-items: baseline;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+  .exp-tag .flag { color: var(--accent); font-weight: 700; }
+  .exp-tag .desc { color: var(--text-muted); }
+
+  /* Tip box */
+  .tip {
+    background: #eef2ff;
+    border-left: 4px solid var(--accent-secondary);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin: 28px 0 16px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .tip strong { color: var(--accent-secondary); }
+  code {
+    background: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: #0f172a;
+  }
+
+  /* piccoli spazi */
+  .spacer { height: 8px; }
+  .unit-select { width: auto; min-width: 70px; }
+  .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  @media (max-width: 480px) { .sub-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-group">
+      <div class="logo">// yt-dlp toolkit</div>
+      <h1>Command <span>Generator</span></h1>
+      <div class="subtitle">configura, personalizza e copia il comando ottimale</div>
+    </div>
+    <div class="version-badge">yt-dlp · ffmpeg ready</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- 1. MEDIA TYPE -->
+    <div class="section">
+      <div class="section-label">01 Tipo di contenuto</div>
+      <div class="toggle-group" id="mediaToggle">
+        <button class="toggle-btn active" data-val="video" onclick="setMediaType('video', this)">📹 Video</button>
+        <button class="toggle-btn" data-val="audio" onclick="setMediaType('audio', this)">🎧 Solo audio</button>
+        <button class="toggle-btn" data-val="both" onclick="setMediaType('both', this)">🌀 Entrambi</button>
+      </div>
+      <div id="videoOpts" style="margin-top: 16px;">
+        <div class="field"><label class="field-label">Qualità video</label><select id="videoQuality" onchange="updateCommand()"><option value="bestvideo+bestaudio/best">Migliore disponibile</option><option value="bestvideo[height<=2160]+bestaudio/best[height<=2160]">4K (2160p)</option><option value="bestvideo[height<=1440]+bestaudio/best[height<=1440]">2K (1440p)</option><option value="bestvideo[height<=1080]+bestaudio/best[height<=1080]">1080p</option><option value="bestvideo[height<=720]+bestaudio/best[height<=720]">720p</option><option value="bestvideo[height<=480]+bestaudio/best[height<=480]">480p</option><option value="bestvideo[height<=360]+bestaudio/best[height<=360]">360p</option><option value="worstvideo+worstaudio/worst">Qualità minima</option></select></div>
+        <div class="field"><label class="field-label">Formato video</label><select id="videoFormat" onchange="updateCommand()"><option value="">Auto</option><option value="mp4">MP4</option><option value="mkv">MKV</option><option value="webm">WebM</option><option value="mov">MOV</option></select></div>
+        <div class="field"><label class="field-label">Codec preferito</label><select id="videoCodec" onchange="updateCommand()"><option value="">Nessuna preferenza</option><option value="avc">H.264/AVC</option><option value="vp9">VP9</option><option value="av01">AV1</option></select></div>
+      </div>
+      <div id="audioOpts" style="margin-top:16px; display:none;">
+        <div class="field"><label class="field-label">Formato audio</label><select id="audioFormat" onchange="updateCommand()"><option value="mp3">MP3</option><option value="m4a">M4A (AAC)</option><option value="flac">FLAC</option><option value="opus">Opus</option><option value="wav">WAV</option></select></div>
+        <div class="field"><label class="field-label">Qualità audio</label><div class="slider-row"><input type="range" id="audioQuality" min="0" max="9" value="0" oninput="updateAudioQualityLabel(); updateCommand()"><div class="slider-val" id="audioQualityVal">0</div></div><div style="font-size:0.7rem; color:var(--text-muted);">0 = massima qualità, 9 = minima</div></div>
+      </div>
+    </div>
+
+    <!-- 2. NOME FILE -->
+    <div class="section">
+      <div class="section-label">02 Nome e percorso</div>
+      <div class="field"><label class="field-label">Template nome</label><input type="text" id="outputTemplate" placeholder="%(title)s.%(ext)s" oninput="updateCommand()"><button class="guide-toggle" onclick="toggleGuide()">📋 Mostra variabili</button></div>
+      <div id="templateGuide" class="template-guide"><div class="guide-title">Variabili utili</div><div class="guide-grid"><div class="guide-item"><span class="guide-key" onclick="insertVar('%(title)s')">%(title)s</span><span class="guide-desc">titolo</span></div><div class="guide-item"><span class="guide-key" onclick="insertVar('%(uploader)s')">%(uploader)s</span><span class="guide-desc">canale</span></div><div class="guide-item"><span class="guide-key" onclick="insertVar('%(id)s')">%(id)s</span><span class="guide-desc">ID video</span></div><div class="guide-item"><span class="guide-key" onclick="insertVar('%(upload_date)s')">%(upload_date)s</span><span class="guide-desc">data</span></div><div class="guide-item"><span class="guide-key" onclick="insertVar('%(playlist_index)s')">%(playlist_index)s</span><span class="guide-desc">indice playlist</span></div><div class="guide-item"><span class="guide-key" onclick="insertVar('%(ext)s')">%(ext)s</span><span class="guide-desc">estensione</span></div><div class="guide-item"><span class="guide-key" onclick="insertVar('%(resolution)s')">%(resolution)s</span><span class="guide-desc">risoluzione</span></div></div></div>
+      <div class="field"><label class="field-label">Percorso cartella</label><input type="text" id="outputPath" placeholder="~/Downloads/yt" oninput="updateCommand()"></div>
+      <div class="field"><label class="field-label">Preset nome</label><select onchange="applyTemplate(this.value)"><option value="">Seleziona preset</option><option value="%(title)s.%(ext)s">Solo titolo</option><option value="%(upload_date)s - %(title)s.%(ext)s">Data + Titolo</option><option value="%(uploader)s/%(title)s.%(ext)s">Cartella canale</option><option value="%(playlist_title)s/%(playlist_index)s - %(title)s.%(ext)s">Playlist organizzata</option></select></div>
+    </div>
+
+    <!-- 3. PLAYLIST & URL -->
+    <div class="section">
+      <div class="section-label">03 URL e playlist</div>
+      <div class="field"><label class="field-label">Link video / playlist</label><input type="text" id="url" placeholder="https://youtube.com/watch?v=..." oninput="updateCommand()"></div>
+      <div class="check-grid"><label class="check-item" id="chk-playlist" onclick="toggleCheck(this,'playlist')"><input type="checkbox" id="playlist"><div class="check-box"></div><span class="check-text">Scarica playlist intera</span></label><label class="check-item" id="chk-noplaylist" onclick="toggleCheck(this,'noplaylist')"><input type="checkbox" id="noplaylist"><div class="check-box"></div><span class="check-text">Solo video singolo</span></label></div>
+      <div class="sub-grid"><div class="field"><label class="field-label">Range inizio</label><input type="text" id="playlistStart" placeholder="es: 2" oninput="updateCommand()"></div><div class="field"><label class="field-label">Range fine</label><input type="text" id="playlistEnd" placeholder="es: 10" oninput="updateCommand()"></div></div>
+      <div class="field"><label class="field-label">Elementi specifici</label><input type="text" id="playlistItems" placeholder="1,3,5-8" oninput="updateCommand()"></div>
+    </div>
+
+    <!-- 4. SOTTOTITOLI -->
+    <div class="section">
+      <div class="section-label">04 Sottotitoli</div>
+      <div class="check-grid"><label class="check-item" id="chk-writeSubs" onclick="toggleCheck(this,'writeSubs')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Scarica sottotitoli</span></label><label class="check-item" id="chk-writeAutoSubs" onclick="toggleCheck(this,'writeAutoSubs')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Sottotitoli automatici</span></label><label class="check-item" id="chk-embedSubs" onclick="toggleCheck(this,'embedSubs')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Incorpora nel file</span></label><label class="check-item" id="chk-allSubs" onclick="toggleCheck(this,'allSubs')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Tutte le lingue</span></label></div>
+      <div class="field"><label class="field-label">Lingue (es: it,en)</label><input type="text" id="subLangs" placeholder="it,en" oninput="updateCommand()"></div>
+      <div class="field"><label class="field-label">Formato sottotitoli</label><select id="subFormat" onchange="updateCommand()"><option value="">Auto</option><option value="srt">SRT</option><option value="vtt">WebVTT</option></select></div>
+    </div>
+
+    <!-- 5. METADATI & THUMBNAIL -->
+    <div class="section">
+      <div class="section-label">05 Metadati & copertina</div>
+      <div class="check-grid"><label class="check-item" id="chk-thumbnail" onclick="toggleCheck(this,'thumbnail')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Salva thumbnail</span></label><label class="check-item" id="chk-embedThumbnail" onclick="toggleCheck(this,'embedThumbnail')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Incorpora copertina</span></label><label class="check-item" id="chk-addMetadata" onclick="toggleCheck(this,'addMetadata')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Aggiungi metadati</span></label><label class="check-item" id="chk-chapters" onclick="toggleCheck(this,'chapters')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Capitoli incorporati</span></label><label class="check-item" id="chk-splitChapters" onclick="toggleCheck(this,'splitChapters')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Dividi per capitoli</span></label></div>
+    </div>
+
+    <!-- 6. RETE & LIMITI -->
+    <div class="section">
+      <div class="section-label">06 Rete e limiti</div>
+      <div class="sub-grid"><div class="field"><label class="field-label">Velocità max</label><div style="display:flex; gap:6px;"><input type="text" id="rateLimit" placeholder="es: 2" style="flex:1" oninput="updateCommand()"><select id="rateLimitUnit" class="unit-select" onchange="updateCommand()"><option value="M">MB/s</option><option value="K">KB/s</option></select></div></div><div class="field"><label class="field-label">Frammenti concorrenti</label><input type="number" id="concurrentFragments" placeholder="es: 4" oninput="updateCommand()"></div></div>
+      <div class="sub-grid"><div class="field"><label class="field-label">Tentativi</label><input type="number" id="retries" placeholder="10" oninput="updateCommand()"></div><div class="field"><label class="field-label">Proxy</label><input type="text" id="proxy" placeholder="socks5://..." oninput="updateCommand()"></div></div>
+      <div class="check-grid"><label class="check-item" id="chk-noCheckCert" onclick="toggleCheck(this,'noCheckCert')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Ignora SSL</span></label><label class="check-item" id="chk-ipv4" onclick="toggleCheck(this,'ipv4')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Forza IPv4</span></label></div>
+    </div>
+
+    <!-- 7. FILTRI -->
+    <div class="section">
+      <div class="section-label">07 Filtri download</div>
+      <div class="sub-grid"><div class="field"><label class="field-label">Durata minima</label><input type="text" id="minDuration" placeholder="00:02:00" oninput="updateCommand()"></div><div class="field"><label class="field-label">Durata massima</label><input type="text" id="maxDuration" placeholder="01:00:00" oninput="updateCommand()"></div></div>
+      <div class="sub-grid"><div class="field"><label class="field-label">Data dopo (YYYYMMDD)</label><input type="text" id="dateAfter" placeholder="20250101" oninput="updateCommand()"></div><div class="field"><label class="field-label">Data prima</label><input type="text" id="dateBefore" placeholder="20251231" oninput="updateCommand()"></div></div>
+      <div class="check-grid"><label class="check-item" id="chk-noOverwrites" onclick="toggleCheck(this,'noOverwrites')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Non sovrascrivere</span></label><label class="check-item" id="chk-continueDownload" onclick="toggleCheck(this,'continueDownload')"><input type="checkbox" checked><div class="check-box"></div><span class="check-text">Riprendi download</span></label></div>
+    </div>
+
+    <!-- 8. POST-PROCESSING -->
+    <div class="section">
+      <div class="section-label">08 Post-processing (FFmpeg)</div>
+      <div class="check-grid"><label class="check-item" id="chk-remux" onclick="toggleCheck(this,'remux')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Remux video</span></label><label class="check-item" id="chk-recode" onclick="toggleCheck(this,'recode')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Ricodifica video</span></label><label class="check-item" id="chk-sponsorblock" onclick="toggleCheck(this,'sponsorblock')"><input type="checkbox"><div class="check-box"></div><span class="check-text">SponsorBlock</span></label><label class="check-item" id="chk-keepVideo" onclick="toggleCheck(this,'keepVideo')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Mantieni originale</span></label></div>
+      <div id="remuxOpts" style="display:none;" class="field"><label class="field-label">Formato remux</label><select id="remuxFormat" onchange="updateCommand()"><option value="mp4">MP4</option><option value="mkv">MKV</option></select></div>
+      <div id="recodeOpts" style="display:none;" class="field"><label class="field-label">Formato ricodifica</label><select id="recodeFormat" onchange="updateCommand()"><option value="mp4">MP4</option><option value="mkv">MKV</option></select></div>
+      <div class="field"><label class="field-label">Argomenti FFmpeg extra</label><input type="text" id="ffmpegArgs" placeholder='-vf "scale=1280:720"' oninput="updateCommand()"></div>
+    </div>
+
+    <!-- 9. AUTENTICAZIONE -->
+    <div class="section">
+      <div class="section-label">09 Cookie e accesso</div>
+      <div class="sub-grid"><div class="field"><label class="field-label">Username</label><input type="text" id="username" placeholder="utente" oninput="updateCommand()"></div><div class="field"><label class="field-label">Password</label><input type="text" id="password" placeholder="password" oninput="updateCommand()"></div></div>
+      <div class="field"><label class="field-label">File cookies</label><input type="text" id="cookiesFile" placeholder="/path/cookies.txt" oninput="updateCommand()"></div>
+      <div class="field"><label class="field-label">Cookie da browser</label><select id="cookiesBrowser" onchange="updateCommand()"><option value="">Disattivato</option><option value="chrome">Chrome</option><option value="firefox">Firefox</option><option value="safari">Safari</option></select></div>
+      <div class="check-grid"><label class="check-item" id="chk-netrc" onclick="toggleCheck(this,'netrc')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Usa .netrc</span></label></div>
+    </div>
+
+    <!-- 10. AVANZATE -->
+    <div class="section">
+      <div class="section-label">10 Opzioni avanzate</div>
+      <div class="check-grid"><label class="check-item" id="chk-verbose" onclick="toggleCheck(this,'verbose')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Verbose (-v)</span></label><label class="check-item" id="chk-quiet" onclick="toggleCheck(this,'quiet')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Silenzioso (-q)</span></label><label class="check-item" id="chk-simulate" onclick="toggleCheck(this,'simulate')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Simula (-s)</span></label><label class="check-item" id="chk-listFormats" onclick="toggleCheck(this,'listFormats')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Lista formati (-F)</span></label><label class="check-item" id="chk-restrictFilenames" onclick="toggleCheck(this,'restrictFilenames')"><input type="checkbox"><div class="check-box"></div><span class="check-text">Nomi sicuri</span></label></div>
+      <div class="field"><label class="field-label">User-Agent</label><input type="text" id="userAgent" placeholder="Mozilla/5.0..." oninput="updateCommand()"></div>
+      <div class="field"><label class="field-label">Opzioni extra</label><input type="text" id="extraArgs" placeholder='--extractor-args "youtube:..."' oninput="updateCommand()"></div>
+    </div>
+  </div>
+
+  <div class="tip"><strong>💡 Richiede ffmpeg</strong> per conversioni audio, remux e incorporazione sottotitoli. <code>brew install ffmpeg</code> · <code>apt install ffmpeg</code> · <code>winget install ffmpeg</code></div>
+
+  <div class="output-wrapper">
+    <div class="output-section">
+      <div class="output-header"><div class="output-title"><div class="pulse"></div> comando yt-dlp</div><div class="btn-group"><button class="btn btn-reset" onclick="resetAll()">↺ Reset</button><button class="btn btn-copy" id="copyBtn" onclick="copyCommand()">📋 Copia comando</button></div></div>
+      <div class="command-display" id="commandOutput"><span class="cmd-prefix">$ </span><span id="cmdText" style="color:var(--text-muted);">imposta le opzioni per generare il comando...</span></div>
+      <div class="explanation" id="explanation"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- JAVASCRIPT ORIGINALE (identico, nessuna modifica funzionale) ---
+  let mediaType = 'video';
+  let checkedFlags = { continueDownload: true };
+  function setMediaType(type, btn) { mediaType = type; document.querySelectorAll('#mediaToggle .toggle-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.getElementById('videoOpts').style.display = (type === 'video' || type === 'both') ? 'flex' : 'none'; document.getElementById('audioOpts').style.display = (type === 'audio' || type === 'both') ? 'flex' : 'none'; updateCommand(); }
+  function toggleCheck(el, key) { el.classList.toggle('active'); checkedFlags[key] = el.classList.contains('active'); if (key === 'playlist' && checkedFlags.playlist) uncheckItem('noplaylist'); if (key === 'noplaylist' && checkedFlags.noplaylist) uncheckItem('playlist'); if (key === 'verbose' && checkedFlags.verbose) uncheckItem('quiet'); if (key === 'quiet' && checkedFlags.quiet) uncheckItem('verbose'); if (key === 'writeSubs' && checkedFlags.writeSubs) uncheckItem('writeAutoSubs'); if (key === 'writeAutoSubs' && checkedFlags.writeAutoSubs) uncheckItem('writeSubs'); if (key === 'remux') document.getElementById('remuxOpts').style.display = checkedFlags.remux ? 'block' : 'none'; if (key === 'recode') document.getElementById('recodeOpts').style.display = checkedFlags.recode ? 'block' : 'none'; updateCommand(); }
+  function uncheckItem(key) { checkedFlags[key] = false; const el = document.getElementById('chk-' + key); if (el) el.classList.remove('active'); }
+  function toggleGuide() { document.getElementById('templateGuide').classList.toggle('visible'); }
+  function insertVar(v) { const inp = document.getElementById('outputTemplate'); const pos = inp.selectionStart; const val = inp.value; inp.value = val.slice(0, pos) + v + val.slice(pos); inp.focus(); inp.selectionStart = inp.selectionEnd = pos + v.length; updateCommand(); }
+  function applyTemplate(v) { if (!v) return; document.getElementById('outputTemplate').value = v; updateCommand(); }
+  function updateAudioQualityLabel() { const val = document.getElementById('audioQuality').value; document.getElementById('audioQualityVal').textContent = val; }
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function updateCommand() { const parts = []; const explanations = []; const url = document.getElementById('url').value.trim(); if (mediaType === 'audio') { const fmt = document.getElementById('audioFormat').value; const q = document.getElementById('audioQuality').value; parts.push('-x'); parts.push(`--audio-format ${fmt}`); parts.push(`--audio-quality ${q}`); explanations.push({ flag: '-x', desc: 'estrai solo audio' }, { flag: '--audio-format', desc: fmt.toUpperCase() }, { flag: `--audio-quality ${q}`, desc: 'qualità VBR' }); } else if (mediaType === 'video') { let quality = document.getElementById('videoQuality').value; const codec = document.getElementById('videoCodec').value; if (codec) quality = quality.replace('bestvideo', `bestvideo[vcodec^=${codec}]`); parts.push(`-f "${quality}"`); const vfmt = document.getElementById('videoFormat').value; if (vfmt) { parts.push(`--merge-output-format ${vfmt}`); explanations.push({ flag: '--merge-output-format', desc: vfmt.toUpperCase() }); } explanations.push({ flag: '-f', desc: 'selezione formato' }); } else { const quality = document.getElementById('videoQuality').value; const fmt = document.getElementById('audioFormat').value; const q = document.getElementById('audioQuality').value; parts.push(`-f "${quality}"`); parts.push(`--audio-format ${fmt}`); parts.push(`--audio-quality ${q}`); explanations.push({ flag: '-f + audio', desc: 'video + audio separati' }); } const outPath = document.getElementById('outputPath').value.trim(); const template = document.getElementById('outputTemplate').value.trim(); const fullTemplate = outPath ? (outPath.replace(/\/$/, '') + '/' + (template || '%(title)s.%(ext)s')) : (template || ''); if (fullTemplate) { parts.push(`-o "${fullTemplate}"`); explanations.push({ flag: '-o', desc: 'percorso output' }); } if (checkedFlags.playlist) { parts.push('--yes-playlist'); explanations.push({ flag: '--yes-playlist', desc: 'scarica playlist' }); } if (checkedFlags.noplaylist) { parts.push('--no-playlist'); explanations.push({ flag: '--no-playlist', desc: 'solo video' }); } const psStart = document.getElementById('playlistStart').value.trim(); if (psStart) { parts.push(`--playlist-start ${psStart}`); explanations.push({ flag: '--playlist-start', desc: `dal ${psStart}` }); } const psEnd = document.getElementById('playlistEnd').value.trim(); if (psEnd) { parts.push(`--playlist-end ${psEnd}`); explanations.push({ flag: '--playlist-end', desc: `fino al ${psEnd}` }); } const psItems = document.getElementById('playlistItems').value.trim(); if (psItems) { parts.push(`--playlist-items "${psItems}"`); explanations.push({ flag: '--playlist-items', desc: 'elementi specifici' }); } if (checkedFlags.continueDownload) { parts.push('-c'); explanations.push({ flag: '-c', desc: 'riprendi download' }); } if (checkedFlags.noOverwrites) { parts.push('--no-overwrites'); explanations.push({ flag: '--no-overwrites', desc: 'non sovrascrivere' }); } if (checkedFlags.writeSubs) { parts.push('--write-subs'); explanations.push({ flag: '--write-subs', desc: 'scarica sottotitoli' }); } if (checkedFlags.writeAutoSubs) { parts.push('--write-auto-subs'); explanations.push({ flag: '--write-auto-subs', desc: 'sottotitoli auto' }); } if (checkedFlags.embedSubs) { parts.push('--embed-subs'); explanations.push({ flag: '--embed-subs', desc: 'incorpora sottotitoli' }); } if (checkedFlags.allSubs) { parts.push('--all-subs'); explanations.push({ flag: '--all-subs', desc: 'tutte lingue' }); } const subLangs = document.getElementById('subLangs').value.trim(); if (subLangs) { parts.push(`--sub-langs "${subLangs}"`); explanations.push({ flag: '--sub-langs', desc: subLangs }); } const subFmt = document.getElementById('subFormat').value; if (subFmt) { parts.push(`--sub-format ${subFmt}`); explanations.push({ flag: '--sub-format', desc: subFmt }); } if (checkedFlags.thumbnail) { parts.push('--write-thumbnail'); explanations.push({ flag: '--write-thumbnail', desc: 'salva thumbnail' }); } if (checkedFlags.embedThumbnail) { parts.push('--embed-thumbnail'); explanations.push({ flag: '--embed-thumbnail', desc: 'incorpora copertina' }); } if (checkedFlags.addMetadata) { parts.push('--add-metadata'); explanations.push({ flag: '--add-metadata', desc: 'aggiungi metadati' }); } if (checkedFlags.chapters) { parts.push('--embed-chapters'); explanations.push({ flag: '--embed-chapters', desc: 'capitoli' }); } if (checkedFlags.splitChapters) { parts.push('--split-chapters'); explanations.push({ flag: '--split-chapters', desc: 'dividi capitoli' }); } const rate = document.getElementById('rateLimit').value.trim(); const rateUnit = document.getElementById('rateLimitUnit').value; if (rate) { parts.push(`-r ${rate}${rateUnit}`); explanations.push({ flag: '-r', desc: `max ${rate}${rateUnit}/s` }); } const concurrent = document.getElementById('concurrentFragments').value.trim(); if (concurrent) { parts.push(`--concurrent-fragments ${concurrent}`); explanations.push({ flag: '--concurrent-fragments', desc: `${concurrent} frammenti` }); } const retries = document.getElementById('retries').value.trim(); if (retries) { parts.push(`--retries ${retries}`); explanations.push({ flag: '--retries', desc: `${retries} tentativi` }); } const proxy = document.getElementById('proxy').value.trim(); if (proxy) { parts.push(`--proxy "${proxy}"`); explanations.push({ flag: '--proxy', desc: 'proxy' }); } if (checkedFlags.noCheckCert) { parts.push('--no-check-certificate'); explanations.push({ flag: '--no-check-cert', desc: 'ignora SSL' }); } if (checkedFlags.ipv4) { parts.push('--force-ipv4'); explanations.push({ flag: '--force-ipv4', desc: 'solo IPv4' }); } const minDur = document.getElementById('minDuration').value.trim(); if (minDur) { parts.push(`--match-filter "duration >= ${minDur}"`); explanations.push({ flag: '--match-filter', desc: `durata ≥ ${minDur}` }); } const maxDur = document.getElementById('maxDuration').value.trim(); if (maxDur) { parts.push(`--match-filter "duration <= ${maxDur}"`); explanations.push({ flag: '--match-filter', desc: `durata ≤ ${maxDur}` }); } const dateAfter = document.getElementById('dateAfter').value.trim(); if (dateAfter) { parts.push(`--dateafter ${dateAfter}`); explanations.push({ flag: '--dateafter', desc: `dopo ${dateAfter}` }); } const dateBefore = document.getElementById('dateBefore').value.trim(); if (dateBefore) { parts.push(`--datebefore ${dateBefore}`); explanations.push({ flag: '--datebefore', desc: `prima ${dateBefore}` }); } if (checkedFlags.remux) { const rf = document.getElementById('remuxFormat').value; parts.push(`--remux-video ${rf}`); explanations.push({ flag: '--remux-video', desc: `remux in ${rf.toUpperCase()}` }); } if (checkedFlags.recode) { const rf = document.getElementById('recodeFormat').value; parts.push(`--recode-video ${rf}`); explanations.push({ flag: '--recode-video', desc: `ricodifica ${rf.toUpperCase()}` }); } if (checkedFlags.sponsorblock) { parts.push('--sponsorblock-remove sponsor'); explanations.push({ flag: '--sponsorblock-remove', desc: 'rimuove sponsor' }); } if (checkedFlags.keepVideo) { parts.push('-k'); explanations.push({ flag: '-k', desc: 'mantieni originale' }); } const ffArgs = document.getElementById('ffmpegArgs').value.trim(); if (ffArgs) { parts.push(`--postprocessor-args "ffmpeg:${ffArgs}"`); explanations.push({ flag: '--postprocessor-args', desc: 'ffmpeg extra' }); } const user = document.getElementById('username').value.trim(); const pass = document.getElementById('password').value.trim(); if (user) { parts.push(`-u "${user}"`); explanations.push({ flag: '-u', desc: 'username' }); } if (pass) { parts.push(`-p "${pass}"`); explanations.push({ flag: '-p', desc: 'password' }); } const cookiesFile = document.getElementById('cookiesFile').value.trim(); if (cookiesFile) { parts.push(`--cookies "${cookiesFile}"`); explanations.push({ flag: '--cookies', desc: 'file cookie' }); } const cookiesBrowser = document.getElementById('cookiesBrowser').value; if (cookiesBrowser) { parts.push(`--cookies-from-browser ${cookiesBrowser}`); explanations.push({ flag: '--cookies-from-browser', desc: cookiesBrowser }); } if (checkedFlags.netrc) { parts.push('--netrc'); explanations.push({ flag: '--netrc', desc: '.netrc' }); } if (checkedFlags.verbose) { parts.push('-v'); explanations.push({ flag: '-v', desc: 'verbose' }); } if (checkedFlags.quiet) { parts.push('-q'); explanations.push({ flag: '-q', desc: 'quiet' }); } if (checkedFlags.simulate) { parts.push('-s'); explanations.push({ flag: '-s', desc: 'simula' }); } if (checkedFlags.listFormats) { parts.push('-F'); explanations.push({ flag: '-F', desc: 'lista formati' }); } if (checkedFlags.restrictFilenames) { parts.push('--restrict-filenames'); explanations.push({ flag: '--restrict-filenames', desc: 'nomi sicuri' }); } const ua = document.getElementById('userAgent').value.trim(); if (ua) { parts.push(`--user-agent "${ua}"`); explanations.push({ flag: '--user-agent', desc: 'user agent' }); } const extra = document.getElementById('extraArgs').value.trim(); if (extra) parts.push(extra); const urlPart = url || 'URL_VIDEO'; const cmd = 'yt-dlp ' + parts.join(' \\\n  ') + ' \\\n  "' + urlPart + '"'; let html = '<span class="cmd-prefix">$ </span>'; const lines = cmd.split('\n'); lines.forEach((line, i) => { line = line.trim().replace(/\\\s*$/, ''); if (line.startsWith('yt-dlp')) { html += '<span style="color:var(--accent);font-weight:700">yt-dlp</span> '; } else if (line.startsWith('-') || line.startsWith('--')) { const spaceIdx = line.indexOf(' '); if (spaceIdx > -1) { html += `<span class="cmd-flag">${escHtml(line.slice(0, spaceIdx))}</span> <span class="cmd-value">${escHtml(line.slice(spaceIdx+1))}</span>`; } else { html += `<span class="cmd-flag">${escHtml(line)}</span>`; } } else if (line.startsWith('"') && (line.includes('http') || line.includes('URL_VIDEO'))) { html += `<span class="cmd-url">${escHtml(line)}</span>`; } else { html += escHtml(line); } if (i < lines.length - 1) html += ' <span style="color:var(--text-muted)">\\</span>\n  '; }); document.getElementById('cmdText').outerHTML = `<span id="cmdText">${html}</span>`; window._currentCommand = cmd; const expEl = document.getElementById('explanation'); if (explanations.length > 0) { expEl.classList.add('visible'); expEl.innerHTML = explanations.map(e => `<span class="exp-tag"><span class="flag">${escHtml(e.flag)}</span><span class="desc">→ ${escHtml(e.desc)}</span></span>`).join(''); } else { expEl.classList.remove('visible'); expEl.innerHTML = ''; } }
+  function copyCommand() { const cmd = window._currentCommand || ''; navigator.clipboard.writeText(cmd).then(() => { const btn = document.getElementById('copyBtn'); btn.textContent = '✓ Copiato!'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = '📋 Copia comando'; btn.classList.remove('copied'); }, 2000); }); }
+  function resetAll() { document.querySelectorAll('input[type=text], input[type=number]').forEach(i => i.value = ''); document.querySelectorAll('select').forEach(s => s.selectedIndex = 0); document.getElementById('audioQuality').value = 0; updateAudioQualityLabel(); checkedFlags = { continueDownload: true }; document.querySelectorAll('.check-item').forEach(el => el.classList.remove('active')); document.getElementById('chk-continueDownload').classList.add('active'); document.getElementById('remuxOpts').style.display = 'none'; document.getElementById('recodeOpts').style.display = 'none'; setMediaType('video', document.querySelector('#mediaToggle .toggle-btn')); updateCommand(); }
+  window.addEventListener('load', () => { document.getElementById('chk-continueDownload').classList.add('active'); updateCommand(); updateAudioQualityLabel(); });
+</script>
+</body>
+</html>
