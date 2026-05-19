@@ -1,3 +1,3 @@
-# ytdlp-generator
+# ytdlp-command-generator
 
 Created usign Claude AI
